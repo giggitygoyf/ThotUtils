@@ -7,7 +7,9 @@ from ThotUtils import ThotUtilsFactory
 
 if __name__ == '__main__':
 	# get starting path
-	path = str(os.getcwd())
+	path = str(os.getcwd()) + '\downloads'
+	if not os.path.exists(path):
+		os.mkdir(path)
 
 	# define the object factory
 	thotutils = ThotUtilsFactory()
