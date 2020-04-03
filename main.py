@@ -1,25 +1,32 @@
 # standard library
-import argparse
 import os
 
 # local library
+from ThotUtils.utils import CommonUtils
 from ThotUtils import ThotUtilsFactory
 
 if __name__ == '__main__':
-	parser = argparse.ArgumentParser()
-	parser.add_argument(
-		'--host',
-	)
-	args = parser.parse_args()
+	# get starting path
+	path = str(os.getcwd())
 
+	# define the object factory
 	thotutils = ThotUtilsFactory()
-	downloader = thotutils.create(args.host)
 
+	# initialize the urls to process
+	urls = {}
+
+	# process URLS.txt and break up into groups by host
 	if os.path.isfile("URLS.txt") and os.stat("URLS.txt").st_size != 0:
-		url_file = open("URLS.txt", "r")
-		for line in url_file:
-			# skip blank lines
-			if line in ['\n', '\r\n']:
-				continue
+		url_list = [line.rstrip('\n\r\n') for line in open("URLS.txt", "r")]
+		url_dict = [{CommonUtils.netloc(u):u} for u in url_list]
+		for u in url_dict:
+			for key, value in u.items():
+				urls.setdefault(key, []).append(value)
 
-			downloader.parse_page(url=line.rstrip())
+	# for each host, create a downloader object and process
+	for h, u in urls.items():
+		# reset path location for each host
+		os.chdir(path)
+		downloader = thotutils.create(h)
+		for url in u:
+			downloader.parse_page(url=url)
