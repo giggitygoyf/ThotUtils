@@ -1,12 +1,9 @@
 # standard library
-import concurrent.futures
 import os
 import re
-from tqdm import tqdm
-from urllib.parse import urlparse, urljoin
 
 # external libraries
-import requests
+import cloudscraper
 from bs4 import BeautifulSoup
 
 # internal libraries
@@ -49,26 +46,13 @@ class CyberDropDownloader(ThotUtils):
 		self.logger.info(f'Images found: {len(urls)}')
 		return urls
 
-	def download_images(self, urls):
-		with concurrent.futures.ThreadPoolExecutor() as executor:
-			_ = list(tqdm(executor.map(self.download_image, urls), total=len(urls)))
-
-	def download_image(self, href):
-		filename = href.split('/')[-1]
-		self.logger.debug(f'Downloading {href} as {filename}')
-
-		r = requests.get(
-			url=href,
-			headers=self.headers
-		)
-		open(filename, 'wb').write(r.content)
-
 	def parse_page(self, url):
 		#self.logger.info(f'Parsing started for: {url}')
 		print(f'Parsing started for: {url}')
 
 		# create the BeautifulSoup object
-		soup = BeautifulSoup(requests.get(url=url, headers=self.headers).content, 'html.parser')
+		scraper = cloudscraper.create_scraper()
+		soup = BeautifulSoup(scraper.get(url=url, headers=self.headers).content, 'html5lib')
 
 		# identify the set and change to directory for it
 		self.identify_set(soup)
@@ -78,7 +62,6 @@ class CyberDropDownloader(ThotUtils):
 
 		if urls is not None:
 			# download the images
-			# self.download_images(urls)
 			super().download_files_parallel(urls)
 		else:
 			print("no images found")
@@ -95,16 +78,3 @@ class CyberDropDownloaderBuilder:
 		if not self._instance:
 			self._instance = CyberDropDownloader()
 		return self._instance
-
-
-if __name__ == '__main__':
-	cyberdrop = CyberDropDownloader()
-
-	if os.path.isfile("URLS.txt") and os.stat("URLS.txt").st_size != 0:
-		url_file = open("URLS.txt", "r")
-		for line in url_file:
-			# skip blank lines
-			if line in ['\n', '\r\n']:
-				continue
-
-			cyberdrop.parse_page(url=line.rstrip())

@@ -2,10 +2,12 @@
 import concurrent.futures
 import logging
 import os
-import requests
 import shutil
 from tqdm import tqdm
 from urllib.parse import urlparse, urljoin
+
+# external library
+import cloudscraper
 
 
 class ThotUtils:
@@ -40,8 +42,9 @@ class ThotUtils:
 		return href
 
 	def download_file(self, url):
+		scraper = cloudscraper.create_scraper()
 		local_filename = url.split('/')[-1]
-		with requests.get(url, headers=self.headers, stream=True) as r:
+		with scraper.get(url, headers=self.headers, stream=True) as r:
 			with open(local_filename, 'wb') as f:
 				shutil.copyfileobj(r.raw, f)
 
@@ -54,17 +57,3 @@ class ThotUtils:
 	def download_files_parallel(self, urls):
 		with concurrent.futures.ThreadPoolExecutor() as executor:
 			_ = list(tqdm(executor.map(self.download_file, urls), total=len(urls)))
-
-	def download_image(self, href):
-		filename = href.split('/')[-1]
-		self.logger.debug(f'Downloading {href} as {filename}')
-
-		r = requests.get(
-			url=href,
-			headers=self.headers
-		)
-		open(filename, 'wb').write(r.content)
-
-	def download_images(self, urls):
-		with concurrent.futures.ThreadPoolExecutor() as executor:
-			_ = list(tqdm(executor.map(self.download_image, urls), total=len(urls)))

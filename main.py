@@ -9,7 +9,6 @@ if __name__ == '__main__':
 	parser = argparse.ArgumentParser()
 	parser.add_argument(
 		'--host',
-		#choices=['CyberDrop', 'Erome']
 	)
 	args = parser.parse_args()
 

@@ -1,12 +1,8 @@
 # standard library
-import concurrent.futures
 import os
-import re
-from tqdm import tqdm
-from urllib.parse import urlparse, urljoin
 
 # external libraries
-import requests
+import cloudscraper
 from bs4 import BeautifulSoup
 
 # internal libraries
@@ -46,16 +42,13 @@ class EromeDownloader(ThotUtils):
 		self.logger.info(f'Videos found: {len(urls)}')
 		return urls
 
-	def download_video(self, href):
-		filename = href.split('/')[-1]
-		self.logger.debug(f'Downloading {href} as {filename}')
-
 	def parse_page(self, url):
 		# self.logger.info(f'Parsing started for: {url}')
 		print(f'Parsing started for: {url}')
 
 		# create the BeautifulSoup object
-		soup = BeautifulSoup(requests.get(url=url, headers=self.headers).content, 'html.parser')
+		scraper = cloudscraper.create_scraper()
+		soup = BeautifulSoup(scraper.get(url=url, headers=self.headers).content, 'html5lib')
 
 		# identify the set and change to directory for it
 		self.identify_set(soup)
@@ -90,16 +83,3 @@ class EromeDownloaderBuilder:
 		if not self._instance:
 			self._instance = EromeDownloader()
 		return self._instance
-
-
-if __name__ == '__main__':
-	erome = EromeDownloader()
-
-	if os.path.isfile("URLS.txt") and os.stat("URLS.txt").st_size != 0:
-		url_file = open("URLS.txt", "r")
-		for line in url_file:
-			# skip blank lines
-			if line in ['\n', '\r\n']:
-				continue
-
-			erome.parse_page(url=line.rstrip())
